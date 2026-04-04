@@ -1,4 +1,3 @@
-
 {
     inputs = {
         nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
@@ -21,6 +20,7 @@
                     shellHook = "export NIX_SHELL_NAME='metrics'";
                     nativeBuildInputs = with pkgs; [
                         rustup
+                        gnumake
                         pkg-config
                         nodejs_22
                     ];

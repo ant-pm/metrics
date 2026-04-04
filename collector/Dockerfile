@@ -1,11 +1,34 @@
-FROM rust:latest AS builder
+FROM --platform=$BUILDPLATFORM rust:latest AS builder
+
+ARG TARGETPLATFORM
+
+RUN case "$TARGETPLATFORM" in \
+    "linux/amd64") echo "x86_64-unknown-linux-gnu"  > /target ;; \
+    "linux/arm64") echo "aarch64-unknown-linux-gnu" > /target ;; \
+    esac
+
+RUN apt-get update && apt-get install -y \
+    gcc-x86-64-linux-gnu \
+    gcc-aarch64-linux-gnu \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup target add $(cat /target)
+
+ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+
+
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
-RUN mkdir src && echo 'fn main(){}' > src/main.rs && cargo build --release && rm -rf src
+RUN TARGET=$(cat /target) && \
+    mkdir src && echo 'fn main(){}' > src/main.rs && \
+    cargo build --release --target $TARGET && \
+    rm -rf src
 COPY src ./src
-RUN touch src/main.rs && cargo build --release
+RUN TARGET=$(cat /target) && \
+    touch src/main.rs && \
+    cargo build --release --target $TARGET
 
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/collector /usr/local/bin/collector
-CMD ["collector"]
+FROM gcr.io/distroless/cc-debian12
+COPY --from=builder /app/target/*/release/collector /usr/local/bin/collector
+CMD ["/usr/local/bin/collector"]

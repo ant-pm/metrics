@@ -32,5 +32,9 @@ containers:
 
     - name: cloudflare-tunnel
       image: cloudflare/cloudflared:latest
-      env:
-          - TUNNEL_TOKEN={{ tunnel_token }}
+      command:
+          - tunnel
+          - --no-autoupdate
+          - run
+          - --token
+          - "{{ tunnel_token }}"
