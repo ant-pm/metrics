@@ -30,7 +30,7 @@ pub async fn get_metrics(State(state): State<Arc<AppState>>) -> impl IntoRespons
         Ok(data) => Json(data).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            format!("query error: {e}"),
+            Json(serde_json::json!({ "error": format!("query error: {e}") })),
         )
             .into_response(),
     }

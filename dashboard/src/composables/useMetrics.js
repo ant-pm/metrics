@@ -19,7 +19,9 @@ export function useMetrics() {
 
   async function fetchInitial() {
     const res = await fetch(`${API_BASE}/api/metrics`)
-    applyData(await res.json())
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error ?? 'Failed to fetch metrics')
+    applyData(data)
   }
 
   function connectSSE() {
