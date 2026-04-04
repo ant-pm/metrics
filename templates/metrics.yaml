@@ -1,0 +1,31 @@
+kind: DockerDeployment
+name: metrics
+network: metrics-net
+volumes:
+  - questdb_data
+containers:
+  - name: questdb
+    image: questdb/questdb:8.2.1
+    ports:
+      - "9000:9000"
+      - "9009:9009"
+      - "8812:8812"
+    mounts:
+      - questdb_data:/var/lib/questdb
+
+  - name: backend
+    image: ghcr.io/ant-pm/metrics-backend:latest
+    env:
+      - QUESTDB_HOST=questdb
+      - QUESTDB_PG_PORT=8812
+
+  - name: collector
+    image: ghcr.io/ant-pm/metrics-collector:latest
+    env:
+      - QUESTDB_HOST=questdb
+      - QUESTDB_ILP_PORT=9009
+
+  - name: dashboard
+    image: ghcr.io/ant-pm/metrics-dashboard:latest
+    ports:
+      - "8080:80"

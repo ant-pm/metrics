@@ -1,0 +1,19 @@
+name: Publish
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create archive
+        run: tar -czf /tmp/archive.tar.gz README.md values.yaml package.yaml templates/
+      - name: Publish
+        uses: ant-pm/publish-action@v1
+        with:
+          registry_url: https://ant.vinlaro.com/api/packages
