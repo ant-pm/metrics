@@ -78,16 +78,22 @@ async fn run_loop(colony_name: &str, prvkey: &str) -> Result<()> {
                         };
                         match res {
                             Ok(out) => {
-                                colonyos::set_output(&process.processid, out, prvkey).await?;
-                                colonyos::close(&process.processid, prvkey).await?;
-                                println!("Process completed successfully");
+                                if let Err(e) = colonyos::set_output(&process.processid, out, prvkey).await {
+                                    eprintln!("Failed to set output: {e}");
+                                } else if let Err(e) = colonyos::close(&process.processid, prvkey).await {
+                                    eprintln!("Failed to close process: {e}");
+                                } else {
+                                    println!("Process completed successfully");
+                                }
                             }
                             Err(e) => {
-                                println!("{e}");
+                                eprintln!("Process failed: {e}");
                                 if let Ok(new_sender) = Sender::from_conf("tcp::addr=questdb:9009;protocol_version=2;") {
                                     sender = new_sender;
                                 }
-                                colonyos::fail(&process.processid, prvkey).await?;
+                                if let Err(fail_err) = colonyos::fail(&process.processid, prvkey).await {
+                                    eprintln!("Failed to mark process as failed: {fail_err}");
+                                }
                             }
                         }
                     }

@@ -7,7 +7,7 @@ services:
     - name: questdb
       image: questdb/questdb:8.2.1
       ports:
-          - "9000:9000"
+          - "9001:9000"
           - "9009:9009"
           - "8812:8812"
       mounts:
