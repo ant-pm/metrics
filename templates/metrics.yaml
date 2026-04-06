@@ -1,9 +1,9 @@
-kind: DockerDeployment
+kind: Stack
 name: metrics
 network: metrics-net
 volumes:
     - questdb_data
-containers:
+services:
     - name: questdb
       image: questdb/questdb:8.2.1
       ports:
