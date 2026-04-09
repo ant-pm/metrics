@@ -5,7 +5,8 @@ import { Progress } from '@/components/ui/progress'
 defineProps({
   node: { type: Object, required: true },
   cores: { type: Array, required: true },
-  disks: { type: Array, required: true },
+  online: { type: Boolean, default: true },
+  mostLoaded: { type: Boolean, default: false },
 })
 
 function formatBytes(bytes) {
@@ -14,12 +15,37 @@ function formatBytes(bytes) {
   const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(1024))
   return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i]
 }
+
+function memPressure(node) {
+  if (node.mem_total_bytes === 0) return false
+  return node.mem_available_bytes / node.mem_total_bytes < 0.1
+}
+
+function timeAgo(ms) {
+  const diff = Date.now() - ms
+  if (diff < 60_000) return `${Math.floor(diff / 1000)}s ago`
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`
+  return `${Math.floor(diff / 3_600_000)}h ago`
+}
 </script>
 
 <template>
-  <Card>
+  <Card :class="[!online ? 'opacity-60' : '', mostLoaded && online ? 'ring-1 ring-amber-500/50' : '']">
     <CardHeader class="pb-3">
-      <CardTitle>{{ node.node_name }}</CardTitle>
+      <div class="flex items-center justify-between">
+        <CardTitle>{{ node.node_name }}</CardTitle>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-muted-foreground">{{ timeAgo(node.timestamp) }}</span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full"
+            :class="online
+              ? 'bg-emerald-500/10 text-emerald-400'
+              : 'bg-muted text-muted-foreground'"
+          >
+            {{ online ? 'Online' : 'Offline' }}
+          </span>
+        </div>
+      </div>
     </CardHeader>
     <CardContent class="space-y-4">
       <!-- CPU -->
@@ -46,7 +72,12 @@ function formatBytes(bytes) {
       <!-- Memory -->
       <div>
         <div class="flex items-center justify-between mb-1">
-          <span class="text-sm font-medium text-muted-foreground">Memory</span>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-medium text-muted-foreground">Memory</span>
+            <span v-if="memPressure(node)" class="text-xs px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-400">
+              pressure
+            </span>
+          </div>
           <span class="text-sm font-mono">
             {{ formatBytes(node.mem_used_bytes) }} / {{ formatBytes(node.mem_total_bytes) }}
           </span>
@@ -55,38 +86,6 @@ function formatBytes(bytes) {
           :model-value="node.mem_total_bytes > 0 ? (node.mem_used_bytes / node.mem_total_bytes) * 100 : 0"
           class="h-2"
         />
-      </div>
-
-      <!-- Swap -->
-      <div v-if="node.swap_total_bytes > 0">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-sm font-medium text-muted-foreground">Swap</span>
-          <span class="text-sm font-mono">
-            {{ formatBytes(node.swap_used_bytes) }} / {{ formatBytes(node.swap_total_bytes) }}
-          </span>
-        </div>
-        <Progress
-          :model-value="(node.swap_used_bytes / node.swap_total_bytes) * 100"
-          class="h-2"
-        />
-      </div>
-
-      <!-- Disks -->
-      <div v-if="disks.length">
-        <span class="text-sm font-medium text-muted-foreground">Disks</span>
-        <div class="space-y-2 mt-1">
-          <div v-for="disk in disks" :key="disk.name">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-xs text-muted-foreground" :title="disk.mount_point">
-                {{ disk.name }}
-              </span>
-              <span class="text-xs font-mono text-muted-foreground">
-                {{ formatBytes(disk.used_bytes) }} / {{ formatBytes(disk.total_bytes) }}
-              </span>
-            </div>
-            <Progress :model-value="disk.usage_percent" class="h-1.5" />
-          </div>
-        </div>
       </div>
     </CardContent>
   </Card>

@@ -74,7 +74,7 @@ function formatTime(ms) {
         <div class="flex items-baseline gap-2 mb-2">
           <span class="text-2xl font-bold">{{ avgCpu.toFixed(1) }}%</span>
           <span class="text-sm text-muted-foreground">
-            across {{ totalCores }} cores ({{ system.length }} nodes)
+            across {{ totalCores }} cores · {{ system.length }} online
           </span>
         </div>
         <Progress :model-value="avgCpu" class="h-3" />

@@ -42,7 +42,7 @@ pub async fn stream_metrics(
 ) -> Sse<impl Stream<Item = Result<Event, axum::Error>>> {
     let stream = async_stream::stream! {
         loop {
-            tokio::time::sleep(Duration::from_secs(10)).await;
+            tokio::time::sleep(Duration::from_secs(5)).await;
             match fetch_all(&state).await {
                 Ok(data) => {
                     let json = serde_json::to_string(&data).unwrap();
